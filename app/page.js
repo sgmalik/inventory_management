@@ -21,6 +21,7 @@ export default function Home() {
       })
     });
     setInventory(inventoryList);
+    console.log(inventoryList);
   };
 
   useEffect(() => {
