@@ -2,13 +2,13 @@
 import Image from "next/image";
 import {useState, useEffect} from "react";
 import {firestore} from '@/firebase';
-import {collection, query, getDocs} from "firebase/firestore";
-import {Box, Button, Grid, Typography, Stack, TextField, Modal} from "@mui/material";
+import {collection, query, getDocs, doc, deleteDoc, setDoc, getDoc} from "firebase/firestore";
+import {Box, Button, Typography, Stack, TextField, Modal} from "@mui/material";
 
 export default function Home() {
-  const [inventory, setInventory] = useState([]);
-  const [open, setOpen] = useState(false);
-  const [itemName, setItemName] = useState('');
+  const [inventory, setInventory] = useState([])
+  const [open, setOpen] = useState(false)
+  const [itemName, setItemName] = useState('')
 
   const updateInventory = async () => {
     const snapshot = query(collection(firestore, 'inventory'));
@@ -19,12 +19,11 @@ export default function Home() {
         name: doc.id,
         ...doc.data(),
       })
-    });
+    })
     setInventory(inventoryList);
-    console.log(inventoryList);
-  };
+  }
 
-  const removeItem = async (name) => {
+  const removeItem = async (item) => {
     const docRef = doc(collection(firestore, 'inventory'), item);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
@@ -35,39 +34,35 @@ export default function Home() {
       else {
         await setDoc(docRef, {
           quantity: quantity - 1,
-        });
+        })
       }
     }
-    await updateInventory();
-  };
+    await updateInventory()
+  }
 
-  const addItem = async (name) => {
+  const addItem = async (item) => {
     const docRef = doc(collection(firestore, 'inventory'), item);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const {quantity} = docSnap.data();
-      setDoc(docRef, {
-          quantity: quantity + 1,
-        })
+      await setDoc(docRef, {quantity: quantity + 1})
     }
     else {
-      await setDoc(docRef, {
-        quantity: 1,
-      });
+      await setDoc(docRef, {quantity: 1})
     }
-    await updateInventory();
-  };
+    await updateInventory()
+  }
 
   useEffect(() => {
-    updateInventory();
-  }, []);
+    updateInventory()
+  }, [])
   
-  const handleopen = () => {
+  const handleOpen = () => {
     setOpen(true);
-  };
+  }
 
   const handleClose = () => {
-    setOpen(false);
+    setOpen(false)
   }
 
   return (
@@ -75,13 +70,12 @@ export default function Home() {
       width="100vw" 
       height="100vh" 
       display="flex" 
+      flexDirection="column"
       justifyContent="center" 
-      alignItems="center" gap={2}
-    >
+      alignItems="center" gap={2}>
       <Modal
         open={open}
-        onClose={handleClose}
-      >
+        onClose={handleClose}>
         <Box
           position="absolute"
           top="50%"
@@ -96,19 +90,87 @@ export default function Home() {
           gap={3}
           sx={{
             transform: "translate(-50%, -50%)",
-          }}
-        >
+          }}>
           <Typography variant="h6">Add Item</Typography>
           <Stack 
             width="100%" 
             direction="row" 
-            spacing={2}
-          >
-            <TextField></TextField>
+            spacing={2}>
+            <TextField 
+              variant="outlined"
+              fullWidth
+              label={itemName}
+              onChange={(e) => setItemName(e.target.value)}>
+            </TextField>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                addItem(itemName)
+                setItemName('')
+                handleClose()
+              }}>
+              Add
+            </Button>
           </Stack>
         </Box>
       </Modal>
-      <Typography variant='h1'>Inventory Management</Typography>
+      <Button
+        variant="contained"
+        onClick={() => {
+          handleOpen()
+        }}>
+        Add New Item
+      </Button>
+      <Box
+        border="1px solid #333">
+        <Box
+          width="800px" 
+          height="100px"
+          bgcolor="#ADD8E6"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"> 
+          <Typography
+            variant="h2" color="#333">
+            Inventory Items
+          </Typography>
+        </Box>
+        <Stack
+        width="800px"
+        height="300px"
+        spacing={2}
+        overflow="auto">
+          {inventory.map(({name, quantity}) => (
+            <Box
+            key={name}
+            width="100%"
+            minHeight="150px"
+            display="flex"
+            alignItems="center"
+            justifyContent="space-between"
+            bgColor="#f0f0f0"
+            padding={5}>
+              <Typography
+              variant="h3"
+              color="#333"
+              textAlighn="center">
+                {name.charAt(0).toUpperCase() + name.slice(1)}
+              </Typography>
+              <Typography
+              variant="h3"
+              color="#333"
+              textAlighn="center">
+                {quantity}
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={() => {removeItem(name)}}>
+                Remove
+              </Button>
+            </Box>
+          ))}
+        </Stack>
+      </Box>
     </Box>
-  );
+  )
 }
